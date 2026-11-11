@@ -1,0 +1,21 @@
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro status_badge(s) %}
+{% set cls = {'Submitted':'text-bg-secondary','Under Review':'text-bg-info','In Progress':'text-bg-primary','Awaiting Info':'text-bg-warning','Resolved':'text-bg-success','Closed':'text-bg-dark','Rejected':'text-bg-danger','Reopened':'text-bg-warning'}[s] %}
+<span class="badge {{ cls }}">{{ s }}</span>
+{% endmacro %}
+
+{% macro priority_badge(p) %}
+{% set cls = {'Low':'text-bg-light border','Medium':'text-bg-secondary','High':'text-bg-warning','Critical':'text-bg-danger'}[p] %}
+<span class="badge {{ cls }}">{{ p }}</span>
+{% endmacro %}
+
+{% macro pager(data, endpoint, args) %}
+{% if data.pages > 1 %}
+<nav aria-label="Result pages"><ul class="pagination flex-wrap">
+  {% for n in range(1, data.pages + 1) %}
+  <li class="page-item {{ 'active' if n == data.page }}"><a class="page-link" href="{{ url_for(endpoint, **dict(args.to_dict(), page=n)) }}" {% if n == data.page %}aria-current="page"{% endif %}>{{ n }}</a></li>
+  {% endfor %}
+</ul></nav>
+{% endif %}
+{% endmacro %}

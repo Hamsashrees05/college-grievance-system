@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Raise a concern. Follow it until it is fixed.</h1>
+  <p class="lead col-lg-7">Every complaint gets a number, an owner and a deadline. If nobody acts in time, it moves up to the head of department and then to the grievance committee.</p>
+  {% if current_user %}
+    <a class="btn btn-primary btn-lg" href="{{ url_for('complaints.dashboard') }}">Go to my dashboard</a>
+  {% else %}
+    <a class="btn btn-primary btn-lg me-2" href="{{ url_for('auth.login') }}">Log in</a>
+    <a class="btn btn-outline-primary btn-lg" href="{{ url_for('auth.register') }}">Create an account</a>
+  {% endif %}
+</section>
+<div class="row g-4 mt-2">
+  <div class="col-lg-6">
+    <h2 class="h4">How it works</h2>
+    <ol class="steps">
+      <li><strong>Submit.</strong> Choose a category, describe the problem and attach evidence if you have any.</li>
+      <li><strong>Assigned.</strong> The right department officer receives it automatically.</li>
+      <li><strong>Tracked.</strong> You see every status change and reply on your dashboard and get notified.</li>
+      <li><strong>Escalated if late.</strong> Missed deadlines go to the head of department, then the grievance committee.</li>
+      <li><strong>Confirm.</strong> When it is resolved you rate the outcome, or reopen it if the problem remains.</li>
+    </ol>
+  </div>
+  <div class="col-lg-6">
+    <h2 class="h4">Your privacy</h2>
+    <p>You can file a complaint anonymously. Officers and heads of department then never see your name. Only the grievance committee and the administrator can, and every time they look it is recorded in the audit log.</p>
+    <p>Complaints about harassment or ragging go straight to the grievance committee and are hidden from ordinary officers.</p>
+    <a href="{{ url_for('main.privacy') }}">Read the privacy policy</a>
+  </div>
+</div>
+{% endblock %}

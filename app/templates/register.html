@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf %}
+{% block title %}Create account{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-7">
+  <div class="panel">
+    <h1 class="h3">Create your account</h1>
+    <p class="text-body-secondary">For students and staff. Officers and committee members are added by the administrator.</p>
+    <form method="post" novalidate>
+      {{ csrf() }}
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label" for="name">Full name</label>
+          <input class="form-control" id="name" name="name" value="{{ form.name }}" autocomplete="name" required></div>
+        <div class="col-md-6"><label class="form-label" for="email">College e-mail</label>
+          <input class="form-control" type="email" id="email" name="email" value="{{ form.email }}" autocomplete="email" required></div>
+        <div class="col-md-6"><label class="form-label" for="role">I am a</label>
+          <select class="form-select" id="role" name="role" required>
+            <option value="">Choose&hellip;</option>
+            <option value="student" {{ 'selected' if form.role == 'student' }}>Student</option>
+            <option value="staff" {{ 'selected' if form.role == 'staff' }}>Staff member</option>
+          </select></div>
+        <div class="col-md-6"><label class="form-label" for="department_id">Department</label>
+          <select class="form-select" id="department_id" name="department_id" required>
+            <option value="">Choose&hellip;</option>
+            {% for d in departments %}<option value="{{ d.id }}" {{ 'selected' if form.department_id == d.id|string }}>{{ d.name }}</option>{% endfor %}
+          </select></div>
+        <div class="col-md-6"><label class="form-label" for="phone">Phone (optional)</label>
+          <input class="form-control" id="phone" name="phone" value="{{ form.phone }}" autocomplete="tel"></div>
+        <div class="col-md-6"></div>
+        <div class="col-md-6"><label class="form-label" for="password">Password</label>
+          <input class="form-control" type="password" id="password" name="password" autocomplete="new-password" aria-describedby="pwhelp" required>
+          <div id="pwhelp" class="form-text">At least 8 characters with an uppercase letter, a lowercase letter and a digit.</div></div>
+        <div class="col-md-6"><label class="form-label" for="password2">Repeat password</label>
+          <input class="form-control" type="password" id="password2" name="password2" autocomplete="new-password" required></div>
+        <div class="col-12"><div class="form-check">
+          <input class="form-check-input" type="checkbox" id="consent" name="consent" value="1" required>
+          <label class="form-check-label" for="consent">I have read the <a href="{{ url_for('main.privacy') }}" target="_blank" rel="noopener">privacy policy</a> and agree to my data being processed for handling grievances.</label>
+        </div></div>
+      </div>
+      <button class="btn btn-primary mt-4" type="submit">Create account</button>
+    </form>
+  </div>
+</div></div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, pager %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<h1 class="h3">Users</h1>
+<details class="panel mb-3">
+  <summary class="fw-semibold">Create a user (officer, head of department, committee, admin)</summary>
+  <form method="post" action="{{ url_for('admin.create_user') }}" class="row g-3 mt-1">
+    {{ csrf() }}
+    <div class="col-md-4"><label class="form-label" for="n">Name</label><input class="form-control" id="n" name="name" required></div>
+    <div class="col-md-4"><label class="form-label" for="e">E-mail</label><input class="form-control" type="email" id="e" name="email" required></div>
+    <div class="col-md-4"><label class="form-label" for="p">Temporary password</label><input class="form-control" type="password" id="p" name="password" autocomplete="new-password" required></div>
+    <div class="col-md-4"><label class="form-label" for="r">Role</label><select class="form-select" id="r" name="role">{% for r in roles %}<option value="{{ r }}">{{ role_labels[r] }}</option>{% endfor %}</select></div>
+    <div class="col-md-4"><label class="form-label" for="d">Department</label><select class="form-select" id="d" name="department_id"><option value="">None</option>{% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}</select></div>
+    <div class="col-md-4 d-flex align-items-end"><button class="btn btn-primary" type="submit">Create user</button></div>
+  </form>
+</details>
+<form class="row g-2 mb-3" method="get"><div class="col-md-6"><label class="visually-hidden" for="q">Search users</label><input class="form-control" id="q" name="q" value="{{ request.args.get('q','') }}" placeholder="Search by name or e-mail"></div><div class="col-auto"><button class="btn btn-outline-primary" type="submit">Search</button></div></form>
+<div class="table-responsive panel p-0">
+<table class="table mb-0">
+  <caption class="visually-hidden">Users</caption>
+  <thead><tr><th scope="col">Name</th><th scope="col">E-mail</th><th scope="col">Role</th><th scope="col">Department</th><th scope="col">Active</th><th scope="col"><span class="visually-hidden">Save</span></th></tr></thead>
+  <tbody>
+  {% for u in data.rows %}
+  <tr>
+    <form method="post" action="{{ url_for('admin.update_user', uid=u.id) }}" id="uf{{ u.id }}">{{ csrf() }}</form>
+    <td>{{ u.name }}</td><td>{{ u.email }}</td>
+    <td><label class="visually-hidden" for="role{{ u.id }}">Role of {{ u.name }}</label><select class="form-select form-select-sm" id="role{{ u.id }}" name="role" form="uf{{ u.id }}">{% for r in roles %}<option value="{{ r }}" {{ 'selected' if r == u.role }}>{{ role_labels[r] }}</option>{% endfor %}</select></td>
+    <td><label class="visually-hidden" for="dep{{ u.id }}">Department of {{ u.name }}</label><select class="form-select form-select-sm" id="dep{{ u.id }}" name="department_id" form="uf{{ u.id }}"><option value="">None</option>{% for d in departments %}<option value="{{ d.id }}" {{ 'selected' if d.id == u.department_id }}>{{ d.name }}</option>{% endfor %}</select></td>
+    <td><label class="visually-hidden" for="act{{ u.id }}">Status of {{ u.name }}</label><select class="form-select form-select-sm" id="act{{ u.id }}" name="is_active" form="uf{{ u.id }}"><option value="1" {{ 'selected' if u.is_active }}>Active</option><option value="0" {{ 'selected' if not u.is_active }}>Deactivated</option></select></td>
+    <td><button class="btn btn-sm btn-outline-primary" type="submit" form="uf{{ u.id }}">Save</button></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{{ pager(data, 'admin.users', request.args) }}
+{% endblock %}

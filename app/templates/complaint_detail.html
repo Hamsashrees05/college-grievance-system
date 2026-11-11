@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, status_badge, priority_badge %}
+{% block title %}{{ c.complaint_code }}{% endblock %}
+{% block content %}
+<nav aria-label="Breadcrumb" class="mb-2 small"><a href="{{ url_for('officer.queue' if is_staff else 'complaints.dashboard') }}">&larr; Back to the list</a></nav>
+<div class="panel">
+  <div class="d-flex flex-wrap justify-content-between gap-2">
+    <div>
+      <div class="complaint-code">{{ c.complaint_code }}</div>
+      <h1 class="h3 mb-1">{{ c.title }}</h1>
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-start">
+      {{ status_badge(c.status) }} {{ priority_badge(c.priority) }}
+      {% if overdue %}<span class="badge text-bg-danger">Overdue</span>{% endif %}
+      {% if c.is_anonymous %}<span class="badge text-bg-light border">Anonymous</span>{% endif %}
+      {% if c.is_sensitive %}<span class="badge text-bg-dark">Sensitive</span>{% endif %}
+    </div>
+  </div>
+  <dl class="row mt-3 mb-0">
+    <dt class="col-sm-3">Category</dt><dd class="col-sm-9">{{ c.category_name }} &ndash; {{ c.department_name }}</dd>
+    <dt class="col-sm-3">Complainant</dt><dd class="col-sm-9">{{ owner_label }}{% if c.is_anonymous and not is_owner and owner_label != 'Anonymous' %} <span class="small text-body-secondary">(identity visible to you because of your role; this view is logged)</span>{% endif %}
+      {% if c.is_anonymous and owner_label != 'Anonymous' and not is_owner %}<br><span class="small">{{ c.owner_email }}{% if c.owner_phone %} &middot; {{ c.owner_phone }}{% endif %}</span>{% endif %}</dd>
+    <dt class="col-sm-3">Submitted</dt><dd class="col-sm-9">{{ c.created_at|dt }}</dd>
+    <dt class="col-sm-3">Response deadline</dt><dd class="col-sm-9">{{ c.due_date|dt }}{% if c.status == 'Awaiting Info' %} <span class="small text-body-secondary">(paused while waiting for information)</span>{% endif %}</dd>
+    {% if c.resolved_at %}<dt class="col-sm-3">Resolved</dt><dd class="col-sm-9">{{ c.resolved_at|dt }}</dd>{% endif %}
+    <dt class="col-sm-3">Handled at</dt><dd class="col-sm-9">Level {{ c.escalation_level }} &ndash; {{ LEVEL_NAMES[c.escalation_level] }}{% if assignee %} ({{ assignee.name }}){% endif %}</dd>
+  </dl>
+</div>
+
+<div class="row g-3 mt-1">
+  <div class="col-lg-8">
+    <section class="panel" aria-labelledby="h-desc">
+      <h2 class="h5" id="h-desc">Description</h2>
+      <p class="prewrap mb-0">{{ c.description }}</p>
+      {% if attachments %}
+      <h3 class="h6 mt-4">Attachments</h3>
+      <ul class="mb-0">{% for a in attachments %}<li><a href="{{ url_for('complaints.attachment', aid=a.id) }}">{{ a.original_name }}</a> <span class="small text-body-secondary">({{ (a.file_size / 1024)|round|int }} KB)</span></li>{% endfor %}</ul>
+      {% endif %}
+    </section>
+
+    <section class="panel" aria-labelledby="h-conv">
+      <h2 class="h5" id="h-conv">Conversation</h2>
+      {% for r in responses %}
+        {% set mine = r.responder_id == c.user_id %}
+        <div class="msg {{ 'internal' if r.is_internal else ('' if mine else 'staff') }}">
+          <div class="small text-body-secondary">
+            {% if mine %}{{ owner_label }} (complainant)
+            {% else %}{{ r.responder_name }} ({{ ROLE_LABELS[r.responder_role] }}){% endif %}
+            &middot; {{ r.created_at|dt }}{% if r.is_internal %} &middot; <strong>Internal note &ndash; not visible to the complainant</strong>{% endif %}
+          </div>
+          <div class="prewrap">{{ r.message }}</div>
+        </div>
+      {% else %}
+        <p class="text-body-secondary">No replies yet.</p>
+      {% endfor %}
+      {% if can_reply %}
+      <form method="post" action="{{ url_for('complaints.reply', cid=c.id) }}" class="mt-3">
+        {{ csrf() }}
+        <label class="form-label" for="message">{{ 'Reply or add a note' if is_staff else 'Add a reply' }}</label>
+        <textarea class="form-control" id="message" name="message" rows="3" maxlength="2000" required></textarea>
+        {% if is_staff %}<div class="form-check mt-2"><input class="form-check-input" type="checkbox" id="internal" name="internal" value="1"><label class="form-check-label" for="internal">Internal note (hidden from the complainant)</label></div>{% endif %}
+        <button class="btn btn-primary mt-2" type="submit">Send</button>
+      </form>
+      {% endif %}
+    </section>
+
+    {% if feedback %}
+    <section class="panel" aria-labelledby="h-fb">
+      <h2 class="h5" id="h-fb">Complainant feedback</h2>
+      <p class="mb-1">Rating: <strong>{{ feedback.rating }} / 5</strong></p>
+      {% if feedback.comments %}<p class="prewrap mb-0">{{ feedback.comments }}</p>{% endif %}
+    </section>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-4">
+    {% if is_staff and next_statuses %}
+    <section class="panel" aria-labelledby="h-status">
+      <h2 class="h5" id="h-status">Update status</h2>
+      <form method="post" action="{{ url_for('officer.set_status', cid=c.id) }}">
+        {{ csrf() }}
+        <label class="form-label" for="new_status">New status</label>
+        <select class="form-select" id="new_status" name="new_status" required>{% for s in next_statuses %}<option>{{ s }}</option>{% endfor %}</select>
+        <label class="form-label mt-2" for="smsg">Message to the complainant</label>
+        <textarea class="form-control" id="smsg" name="message" rows="3" aria-describedby="smsgh" maxlength="2000"></textarea>
+        <div id="smsgh" class="form-text">Required for Rejected, Awaiting Info and Reopened.</div>
+        <button class="btn btn-primary mt-2" type="submit">Update status</button>
+      </form>
+    </section>
+    {% endif %}
+    {% if can_escalate %}
+    <section class="panel" aria-labelledby="h-esc">
+      <h2 class="h5" id="h-esc">Escalate</h2>
+      <form method="post" action="{{ url_for('officer.manual_escalate', cid=c.id) }}">
+        {{ csrf() }}
+        <label class="form-label" for="reason">Reason</label>
+        <textarea class="form-control" id="reason" name="reason" rows="2" maxlength="500" required></textarea>
+        <button class="btn btn-outline-primary mt-2" type="submit">Escalate to Level {{ c.escalation_level + 1 }}</button>
+      </form>
+    </section>
+    {% endif %}
+    {% if can_feedback %}
+    <section class="panel" aria-labelledby="h-fbk">
+      <h2 class="h5" id="h-fbk">Is it solved?</h2>
+      <p class="small">Rating the outcome confirms the resolution and closes the complaint.</p>
+      <form method="post" action="{{ url_for('complaints.feedback', cid=c.id) }}">
+        {{ csrf() }}
+        <label class="form-label" for="rating">Rating</label>
+        <select class="form-select" id="rating" name="rating" required>
+          <option value="">Choose&hellip;</option><option value="5">5 &ndash; Excellent</option><option value="4">4 &ndash; Good</option><option value="3">3 &ndash; Fair</option><option value="2">2 &ndash; Poor</option><option value="1">1 &ndash; Very poor</option>
+        </select>
+        <label class="form-label mt-2" for="comments">Comments (optional)</label>
+        <textarea class="form-control" id="comments" name="comments" rows="2" maxlength="1000"></textarea>
+        <button class="btn btn-primary mt-2" type="submit">Confirm and close</button>
+      </form>
+    </section>
+    {% endif %}
+    {% if can_reopen %}
+    <section class="panel" aria-labelledby="h-reopen">
+      <h2 class="h5" id="h-reopen">Problem not solved?</h2>
+      <form method="post" action="{{ url_for('complaints.reopen', cid=c.id) }}">
+        {{ csrf() }}
+        <label class="form-label" for="rmsg">Why are you reopening it?</label>
+        <textarea class="form-control" id="rmsg" name="message" rows="2" maxlength="1000" required></textarea>
+        <button class="btn btn-outline-primary mt-2" type="submit">Reopen complaint</button>
+      </form>
+    </section>
+    {% endif %}
+    {% if can_upload %}
+    <section class="panel" aria-labelledby="h-up">
+      <h2 class="h5" id="h-up">Add files</h2>
+      <form method="post" action="{{ url_for('complaints.upload', cid=c.id) }}" enctype="multipart/form-data">
+        {{ csrf() }}
+        <label class="form-label" for="files">PDF, PNG or JPG, 5 MB each</label>
+        <input class="form-control" type="file" id="files" name="files" multiple accept=".pdf,.png,.jpg,.jpeg" required>
+        <button class="btn btn-outline-primary mt-2" type="submit">Upload</button>
+      </form>
+    </section>
+    {% endif %}
+
+    <section class="panel" aria-labelledby="h-tl">
+      <h2 class="h5" id="h-tl">Progress</h2>
+      <ol class="timeline mb-0">
+        {% for t in timeline %}<li><div>{{ t.details }}</div><div class="small text-body-secondary">{{ t.created_at|dt }}</div></li>{% endfor %}
+      </ol>
+    </section>
+    {% if escalations %}
+    <section class="panel" aria-labelledby="h-eh">
+      <h2 class="h5" id="h-eh">Escalation history</h2>
+      <ul class="mb-0 ps-3">{% for e in escalations %}<li>Level {{ e.from_level }} &rarr; {{ e.to_level }} on {{ e.escalated_at|dt }}<div class="small text-body-secondary">{{ e.reason }}</div></li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

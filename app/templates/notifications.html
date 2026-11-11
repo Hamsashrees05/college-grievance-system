@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf, pager %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Notifications</h1>
+  {% if unread_count %}<form method="post" action="{{ url_for('notifications.mark_all_read') }}">{{ csrf() }}<button class="btn btn-outline-primary btn-sm" type="submit">Mark all as read</button></form>{% endif %}
+</div>
+{% if data.rows %}
+<ul class="list-group">
+  {% for n in data.rows %}
+  <li class="list-group-item d-flex justify-content-between align-items-center gap-3 {{ 'fw-semibold' if not n.is_read }}">
+    <div>{% if not n.is_read %}<span class="badge text-bg-warning me-2">New</span>{% endif %}{{ n.message }}<div class="small text-body-secondary fw-normal">{{ n.created_at|dt }}</div></div>
+    <form method="post" action="{{ url_for('notifications.mark_read', nid=n.id) }}">{{ csrf() }}
+      <button class="btn btn-sm btn-outline-primary" type="submit">{{ 'Open complaint' if n.complaint_id else 'Mark read' }}</button></form>
+  </li>
+  {% endfor %}
+</ul>
+{{ pager(data, 'notifications.list_notifications', request.args) }}
+{% else %}
+<div class="panel text-center py-5">You have no notifications yet. Updates about your complaints will appear here.</div>
+{% endif %}
+{% endblock %}

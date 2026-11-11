@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import pager %}
+{% block title %}Audit log{% endblock %}
+{% block content %}
+<h1 class="h3">Audit log</h1>
+<p class="text-body-secondary">Every important action is recorded here. Entries cannot be edited from the website.</p>
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-4"><label class="form-label small mb-0" for="action">Action</label><select class="form-select" id="action" name="action"><option value="">All actions</option>{% for a in actions %}<option {{ 'selected' if request.args.get('action') == a }}>{{ a }}</option>{% endfor %}</select></div>
+  <div class="col-md-5"><label class="form-label small mb-0" for="q">User e-mail or details</label><input class="form-control" id="q" name="q" value="{{ request.args.get('q','') }}"></div>
+  <div class="col-md-3 d-flex align-items-end"><button class="btn btn-primary w-100" type="submit">Filter</button></div>
+</form>
+<div class="table-responsive panel p-0">
+<table class="table table-sm mb-0">
+  <caption class="visually-hidden">Audit log entries</caption>
+  <thead><tr><th scope="col">When</th><th scope="col">User</th><th scope="col">Action</th><th scope="col">Item</th><th scope="col">Details</th><th scope="col">IP</th></tr></thead>
+  <tbody>
+  {% for a in data.rows %}
+  <tr><td>{{ a.created_at|dt }}</td><td>{{ a.user_email or 'system' }}</td><td>{{ a.action }}</td><td>{{ a.entity or '' }}{{ ' #' ~ a.entity_id if a.entity_id }}</td><td>{{ a.details or '' }}</td><td>{{ a.ip_address or '' }}</td></tr>
+  {% else %}
+  <tr><td colspan="6" class="text-center py-4">No entries match.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{{ pager(data, 'admin.audit_log', request.args) }}
+{% endblock %}

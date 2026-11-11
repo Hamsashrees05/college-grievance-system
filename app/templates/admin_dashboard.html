@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf %}
+{% block title %}Admin dashboard{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h1 class="h3 mb-0">Dashboard</h1>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-primary" href="{{ url_for('admin.export_csv') }}">Download complaints (CSV)</a>
+    <form method="post" action="{{ url_for('admin.escalate_now') }}">{{ csrf() }}<button class="btn btn-primary" type="submit">Run escalation check now</button></form>
+  </div>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-2"><div class="stat"><div class="num">{{ stats.total }}</div>Complaints</div></div>
+  <div class="col-6 col-lg-2"><div class="stat"><div class="num">{{ stats.open }}</div>Open</div></div>
+  <div class="col-6 col-lg-2"><div class="stat"><div class="num">{{ stats.overdue }}</div>Overdue</div></div>
+  <div class="col-6 col-lg-2"><div class="stat"><div class="num">{{ '%.1f'|format(stats.avg_days) if stats.avg_days is not none else '–' }}</div>Avg. days to resolve</div></div>
+  <div class="col-6 col-lg-2"><div class="stat"><div class="num">{{ '%.1f'|format(stats.avg_rating) if stats.avg_rating is not none else '–' }}</div>Avg. rating (of 5)</div></div>
+  <div class="col-6 col-lg-2"><div class="stat"><div class="num">{{ stats.users }}</div>Active users</div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-4"><section class="panel" aria-labelledby="c1"><h2 class="h6" id="c1">By status</h2><div class="chart-box"><canvas id="chart-status" role="img" aria-label="Doughnut chart of complaints by status"></canvas></div></section></div>
+  <div class="col-lg-8"><section class="panel" aria-labelledby="c2"><h2 class="h6" id="c2">By category</h2><div class="chart-box"><canvas id="chart-category" role="img" aria-label="Bar chart of complaints by category"></canvas></div></section></div>
+  <div class="col-12"><section class="panel" aria-labelledby="c3"><h2 class="h6" id="c3">Complaints per month</h2><div class="chart-box"><canvas id="chart-monthly" role="img" aria-label="Line chart of complaints per month"></canvas></div></section></div>
+  <div class="col-12"><section class="panel" aria-labelledby="c4"><h2 class="h6" id="c4">By department</h2>
+    <div class="table-responsive"><table class="table mb-0"><caption class="visually-hidden">Complaints and average resolution time by department</caption>
+      <thead><tr><th scope="col">Department</th><th scope="col">Complaints</th><th scope="col">Avg. days to resolve</th></tr></thead>
+      <tbody>{% for d in by_dept %}<tr><td>{{ d.name }}</td><td>{{ d.n }}</td><td>{{ '%.1f'|format(d.avg_days) if d.avg_days is not none else '–' }}</td></tr>{% endfor %}</tbody></table></div>
+  </section></div>
+</div>
+<script type="application/json" id="chart-data">{{ chart|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

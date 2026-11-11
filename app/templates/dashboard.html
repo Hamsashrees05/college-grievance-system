@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import status_badge, priority_badge, pager %}
+{% block title %}My complaints{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">My complaints</h1>
+  <a class="btn btn-primary" href="{{ url_for('complaints.new') }}">Submit a new complaint</a>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="stat"><div class="num">{{ total }}</div>Total</div></div>
+  <div class="col-6 col-md-3"><div class="stat"><div class="num">{{ (counts.get('Submitted',0) + counts.get('Under Review',0) + counts.get('In Progress',0) + counts.get('Reopened',0)) }}</div>Being handled</div></div>
+  <div class="col-6 col-md-3"><div class="stat"><div class="num">{{ counts.get('Awaiting Info',0) }}</div>Waiting for you</div></div>
+  <div class="col-6 col-md-3"><div class="stat"><div class="num">{{ counts.get('Resolved',0) }}</div>To confirm</div></div>
+</div>
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-5"><label class="visually-hidden" for="q">Search by ID or title</label>
+    <input class="form-control" id="q" name="q" value="{{ request.args.get('q','') }}" placeholder="Search by ID or title"></div>
+  <div class="col-md-4"><label class="visually-hidden" for="status">Status</label>
+    <select class="form-select" id="status" name="status"><option value="">All statuses</option>
+      {% for s in statuses %}<option {{ 'selected' if request.args.get('status') == s }}>{{ s }}</option>{% endfor %}</select></div>
+  <div class="col-md-3"><button class="btn btn-outline-primary w-100" type="submit">Filter</button></div>
+</form>
+{% if data.rows %}
+<div class="table-responsive panel p-0">
+<table class="table table-hover mb-0">
+  <caption class="visually-hidden">Your complaints</caption>
+  <thead><tr><th scope="col">ID</th><th scope="col">Title</th><th scope="col">Category</th><th scope="col">Status</th><th scope="col">Due</th><th scope="col">Updated</th></tr></thead>
+  <tbody>
+  {% for c in data.rows %}
+    <tr>
+      <td class="complaint-code"><a href="{{ url_for('complaints.detail', cid=c.id) }}">{{ c.complaint_code }}</a></td>
+      <td>{{ c.title }}{% if c.is_anonymous %} <span class="badge text-bg-light border">Anonymous</span>{% endif %}</td>
+      <td>{{ c.category_name }}</td>
+      <td>{{ status_badge(c.status) }} {% if is_overdue(c) %}<span class="badge text-bg-danger">Overdue</span>{% endif %}</td>
+      <td>{{ c.due_date|dt(false) }}</td>
+      <td>{{ c.updated_at|dt }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{{ pager(data, 'complaints.dashboard', request.args) }}
+{% else %}
+<div class="panel text-center py-5">
+  <p class="mb-2">{% if request.args %}No complaints match your filter.{% else %}You have not submitted any complaints yet.{% endif %}</p>
+  <a class="btn btn-primary" href="{{ url_for('complaints.new') }}">Submit your first complaint</a>
+</div>
+{% endif %}
+{% endblock %}

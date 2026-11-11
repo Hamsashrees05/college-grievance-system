@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Help{% endblock %}
+{% block content %}
+<article class="panel col-lg-9">
+  <h1>Help and about</h1>
+  <h2 class="h5 mt-3">Who can use the system</h2>
+  <p><strong>Students and staff</strong> submit and track complaints. <strong>Department officers</strong> resolve them. <strong>Heads of department</strong> handle escalations. The <strong>grievance committee</strong> handles serious or sensitive cases. The <strong>administrator</strong> manages users, categories and reports.</p>
+  <h2 class="h5 mt-3">Status meanings</h2>
+  <dl>
+    <dt>Submitted</dt><dd>Received and waiting for review.</dd>
+    <dt>Under Review / In Progress</dt><dd>Someone is looking at it or working on it.</dd>
+    <dt>Awaiting Info</dt><dd>The officer needs more details from you. The deadline clock pauses until you reply.</dd>
+    <dt>Resolved</dt><dd>The officer says it is fixed. Please confirm and rate, or reopen within 7 days if it is not.</dd>
+    <dt>Closed</dt><dd>You confirmed the outcome.</dd>
+    <dt>Rejected</dt><dd>It cannot be handled, and the reason is given.</dd>
+    <dt>Reopened</dt><dd>You told us the problem was not solved, so it is being reviewed again.</dd>
+  </dl>
+  <h2 class="h5 mt-3">Files you can attach</h2>
+  <p>PDF, PNG or JPG, up to 5 MB each, and up to 5 files per complaint.</p>
+</article>
+{% endblock %}
